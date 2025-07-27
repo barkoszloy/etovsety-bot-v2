@@ -1,0 +1,66 @@
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+
+# Команда для публикации в канал
+async def evening_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Только ты можешь вызывать эту команду
+    allowed_user_id = @a_llquestions  # ← сюда вставь свой Telegram user ID
+
+    if update.effective_user.id != allowed_user_id:
+        await update.message.reply_text("⛔ У вас нет доступа к этой команде.")
+        return
+
+    keyboard = [
+        [InlineKeyboardButton("Карта 1", callback_data="card1"),
+         InlineKeyboardButton("Карта 2", callback_data="card2")],
+        [InlineKeyboardButton("Карта 3", callback_data="card3"),
+         InlineKeyboardButton("Карта 4", callback_data="card4")],
+        [InlineKeyboardButton("Карта 5", callback_data="card5"),
+         InlineKeyboardButton("Карта 6", callback_data="card6")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await context.bot.send_message(
+        chat_id='@eto_vse_ty',
+        text="✨ Что ждёт тебя вечером?\nВыбери одну из 6 карт ниже 👇",
+        reply_markup=reply_markup
+    )
+
+# Ответы на выбор карты
+async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    responses = {
+        "card1": "🌙 Вечер принесёт тебе долгожданное спокойствие.",
+        "card2": "✨ Ты получишь знак. Он будет мягким, но точным.",
+        "card3": "💫 Вечер обнимет тебя нежностью. Ты не одна.",
+        "card4": "🔥 Уйдёт то, что мешало. Станет тише внутри.",
+        "card5": "🌌 Хочется побыть с собой — это будет целительно.",
+        "card6": "🌺 Сердце услышит то, что давно ждало."
+    }
+
+    message = responses.get(query.data, "✨ Вечер полон тайн...")
+    await query.message.reply_text(message)
+
+# Подключение
+app = ApplicationBuilder().token("ТВОЙ_ТОКЕН").build()
+app.add_handler(CommandHandler("вечер", evening_post))
+app.add_handler(CommandHandler("start", lambda u, c: u.message.reply_text("Бот работает ✅")))
+app.add_handler(CommandHandler("help", lambda u, c: u.message.reply_text("Команда: /вечер — выложить пост")))
+app.add_handler(CommandHandler("test", lambda u, c: u.message.reply_text(str(u.effective_user.id))))  # для получения ID
+app.add_handler(CommandHandler("stop", lambda u, c: u.message.reply_text("Бот выключается...")))
+app.add_handler(CommandHandler("ping", lambda u, c: u.message.reply_text("Живой!")))
+app.add_handler(CommandHandler("id", lambda u, c: u.message.reply_text(f"Ваш ID: {u.effective_user.id}")))
+app.add_handler(CommandHandler("buttons", evening_post))
+app.add_handler(CommandHandler("cards", evening_post))
+app.add_handler(CommandHandler("go", evening_post))
+app.add_handler(CommandHandler("пост", evening_post))
+app.add_handler(CommandHandler("расклад", evening_post))
+
+app.add_handler(CommandHandler("ping", lambda u, c: u.message.reply_text("✅ Я на связи!")))
+
+from telegram.ext import CallbackQueryHandler
+app.add_handler(CallbackQueryHandler(handle_callback))
+
+app.run_polling()
